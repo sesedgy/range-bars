@@ -1,8 +1,8 @@
 import React, {Component} from 'react';
-import {Col, Row} from "react-bootstrap";
+import {Col, Row} from 'react-bootstrap';
 import InputNumber from 'rc-input-number';
 
-class Slider extends Component {
+class Bar extends Component {
     constructor(props) {
         super(props);
         this.state = {
@@ -15,7 +15,7 @@ class Slider extends Component {
      *  @param {number || string} `value` - Value from input.
      */
     changeInputValue(value){
-        if(!value || value === ""){
+        if(!value || value === ''){
             this.changeValue(0);
             return;
         }
@@ -27,15 +27,19 @@ class Slider extends Component {
         let strValue;
         if(typeof value === 'string'){
             //Cleaning all unallowed symbols
-            strValue = value.replace(/[^.0-9]/gim, '');
+            strValue = value.replace(/[^.0-9]/g, '');
             value = +strValue;
+            if(isNaN(value)){
+                this.setState({value: 0});
+                return
+            }
         }else{
-            strValue = value + "";
+            strValue = value + '';
         }
         //Replacing ',' with '.'
-        if(this.lastPressedChar === ','){
+        if(this.lastPressedChar === ',' && strValue.indexOf('.') === -1){
             this.lastPressedChar = null;
-            this.setState({value: this.state.value + "."});
+            this.setState({value: this.state.value + '.'});
             return
         }
         //Checking if the amount of decimals > 2
@@ -45,7 +49,7 @@ class Slider extends Component {
             return;
         }
         //f item’s value ends with '.' It’s being saved in the state
-        if(strValue.indexOf('.') === strValue.length - 1){
+        if(strValue.indexOf('.') === strValue.length - 1 && (strValue.match(/[.]/g) || []).length === 1){
             this.setState({value: strValue});
             return;
         }
@@ -63,7 +67,7 @@ class Slider extends Component {
      *  @param {number} `value` - New item's percent value .
      */
     changeValue(value){
-        this.props.changeValue(this.props.item.Id, value);
+        this.props.changeValue(this.props.item.Id, parseFloat(value));
     }
 
     componentWillReceiveProps(nextProps) {
@@ -74,12 +78,12 @@ class Slider extends Component {
 
     render() {
         return (
-            <Row style={{marginBottom: "20px"}}>
+            <Row style={{marginBottom: '20px'}}>
                 <Col xs={2}>
                     <span>{this.props.item.Name}</span>
                 </Col>
                 <Col xs={8}>
-                    <input type="range" min="0" max="100" value={this.props.item.Percent} step="0.01" onChange={(e) => {this.changeValue(e.target.value)}}/>
+                    <input type='range' min='0' max='100' value={this.props.item.Percent} step='0.01' onChange={(e) => {this.changeValue(e.target.value)}}/>
                 </Col>
                 <Col xs={2}>
                     <InputNumber
@@ -97,4 +101,4 @@ class Slider extends Component {
     }
 }
 
-export default Slider;
+export default Bar;

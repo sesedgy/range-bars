@@ -1,6 +1,6 @@
 import React, {Component} from 'react';
-import Slider from './Slider';
 import {Button, Col, ControlLabel, FormControl, Grid, Row} from 'react-bootstrap';
+import Bar from "./Bar";
 import './App.css';
 import 'rc-input-number/assets/index.css';
 
@@ -35,37 +35,110 @@ class App extends Component {
     /** @description Receiving server response
      */
     getData(){
-        this.imitateGetRequest(this.state.itemsCount).then((result) => {
-            let percentSum = 0;
-            result.forEach((item, index) => {
-                item.Id = index;
-                percentSum += item.Percent;
+        if(this.state.itemsCount > 0) {
+            this.imitateGetRequest(this.state.itemsCount).then((result) => {
+                let percentSum = 0;
+                result.forEach((item, index) => {
+                    item.Id = index;
+                    percentSum += item.Percent;
+                });
+                // If the total sum of all item's values is less than 100
+                if (percentSum < 100) {
+                    let value = 100 - percentSum;
+                    while (value >= 0) {
+                        this.increaseMinBarValue(result, null, 0.1);
+                        value -= 0.1;
+                    }
+                    // If the total sum of all item's values is more than 100
+                } else if (percentSum > 100) {
+                    let value = percentSum - 100;
+                    while (value >= 0) {
+                        this.decreaseMaxBarValue(result, null, 0.1);
+                        value -= 0.1;
+                    }
+                }
+                this.setState({data: result});
             });
-            this.setState({data: result});
-        });
+        }
     }
 
     /** @description Counting the amount of items.
      *  @param {number} `id` - Changed item id.
      *  @param {number} `value` - New item's percent value.
      */
-    onChangeSliderValue(id, value){
+    onChangeBarValue(id, value){
         let data = this.state.data;
         let changedItem = data.find((item) => item.Id === id);
 
+        //Value increase
+        if(changedItem.Percent < value){
+            this.decreaseMaxBarValue(data, id, value - changedItem.Percent);
+        //Value decrease
+        }else{
+            this.increaseMinBarValue(data, id, changedItem.Percent - value);
+        }
         changedItem.Percent = value;
         this.setState({data: data});
     };
-    
+
+    /** @description Increasing the value of item with the smallest value.
+     *  @param {object} `data` - Array with all items.
+     *  @param {number || null} `id` - Changed item id.
+     *  @param {number} `value` - Item was changed on 'value'.
+     */
+    increaseMinBarValue(data, id, value){
+        if(data.length !== 1) {
+            let minValue = id === 0 ? data[1].Percent : data[0].Percent;
+            let itemWithMinValue = id === 0 ? data[1] : data[0];
+            data.forEach((item) => {
+                if (item.Id !== id) {
+                    if (item.Percent < minValue) {
+                        minValue = item.Percent;
+                        itemWithMinValue = item;
+                    }
+                }
+            });
+            itemWithMinValue.Percent = +((itemWithMinValue.Percent + value).toFixed(2));
+        }
+    }
+
+    /** @description Decreasing the value of item with the biggest value.
+     *  @param {object} `data` - Array with all items.
+     *  @param {number || null} `id` - Changed item id.
+     *  @param {number} `value` - Item was changed on 'value'.
+     */
+    decreaseMaxBarValue(data, id, value){
+        if(data.length !== 1) {
+            let maxValue = id === 0 ? data[1].Percent : data[0].Percent;
+            let itemWithMaxValue = id === 0 ? data[1] : data[0];
+            data.forEach((item) => {
+                if (item.Id !== id) {
+                    if (item.Percent > maxValue) {
+                        maxValue = item.Percent;
+                        itemWithMaxValue = item;
+                    }
+                }
+            });
+            //If the value of the max-item might become negative then it’s remainder is redistributed between the remaining items
+            let remainder = +((itemWithMaxValue.Percent - value).toFixed(2));
+            if (remainder < 0) {
+                itemWithMaxValue.Percent = 0;
+                this.decreaseMaxBarValue(data, id, -remainder);
+            } else {
+                itemWithMaxValue.Percent = remainder;
+            }
+        }
+    }
+
     componentDidMount(){
         this.getData();
     }
 
     render() {
-        const sliderList = [];
+        const barsList = [];
         const itemsList = [];
         this.state.data.forEach((item) => {
-            sliderList.push(<Slider key={item.Id} item={item} changeValue={(id, value) => this.onChangeSliderValue(id, value)}/>);
+            barsList.push(<Bar key={item.Id} item={item} changeValue={(id, value) => this.onChangeBarValue(id, value)}/>);
             itemsList.push(<Row key={item.Id}>{item.Name}: {item.Percent}%</Row>)
         });
 
@@ -86,7 +159,7 @@ class App extends Component {
                         </Col>
                     </Row>
                     <Row>
-                        <Col xs={12}>{sliderList}</Col>
+                        <Col xs={12}>{barsList}</Col>
                     </Row>
                     <Row>
                         <Col xs={6}>{itemsList}</Col>
