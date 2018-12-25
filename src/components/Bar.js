@@ -3,13 +3,10 @@ import {Col, Row} from 'react-bootstrap';
 import InputNumber from 'rc-input-number';
 
 class Bar extends Component {
-    constructor(props) {
-        super(props);
-        this.state = {
-            value: this.props.item.Percent,
-        };
-        this.lastPressedChar = null;
-    }
+    state = {
+        value: this.props.item.Percent,
+    };
+    lastPressedChar = null;
 
     /** @description Processing the input value.
      *  @param {number || string} `value` - Value from input.
@@ -28,13 +25,13 @@ class Bar extends Component {
         if(typeof value === 'string'){
             //Cleaning all unallowed symbols
             strValue = value.replace(/[^.0-9]/g, '');
-            value = +strValue;
+            value = Number(strValue);
             if(isNaN(value)){
                 this.setState({value: 0});
                 return
             }
         }else{
-            strValue = value + '';
+            strValue = String(value);
         }
         //Replacing ',' with '.'
         if(this.lastPressedChar === ',' && strValue.indexOf('.') === -1){
@@ -77,20 +74,22 @@ class Bar extends Component {
     }
 
     render() {
+        const { value } = this.state;
+        const { item } = this.props;
         return (
             <Row style={{marginBottom: '20px'}}>
                 <Col xs={2}>
-                    <span>{this.props.item.Name}</span>
+                    <span>{item.Name}</span>
                 </Col>
                 <Col xs={8}>
-                    <input type='range' min='0' max='100' value={this.props.item.Percent} step='0.01' onChange={(e) => {this.changeValue(e.target.value)}}/>
+                    <input type='range' min='0' max='100' value={item.Percent} step='0.01' onChange={(e) => {this.changeValue(e.target.value)}}/>
                 </Col>
                 <Col xs={2}>
                     <InputNumber
                         min={0}
                         max={100}
                         step={0.1}
-                        value={this.state.value}
+                        value={value}
                         style={{ width: 100 }}
                         onKeyDown={(e) => this.onInputKeyDown(e.key)}
                         onChange={(value) => this.changeInputValue(value)}
